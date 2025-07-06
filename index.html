@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Otopark Yönetim Sistemi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .table-container { max-height: 55vh; overflow-y: auto; }
+        thead th { position: sticky; top: 0; z-index: 10; }
+        .departed-row { background-color: #f3f4f6; }
+        .dark .departed-row { background-color: #374151; }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="text-white text-xl" data-lang="loading">Yükleniyor...</div>
+    </div>
+    
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmation-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+            <p id="modal-text" class="text-lg mb-6"></p>
+            <div class="flex justify-center space-x-4">
+                <button id="modal-cancel-btn" class="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors" data-lang="cancel">İptal</button>
+                <button id="modal-confirm-btn" class="px-6 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors" data-lang="confirm">Onayla</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="container mx-auto p-4 lg:p-6 relative">
+        <!-- Language Switcher -->
+        <div class="absolute top-4 right-4 lg:top-6 lg:right-6">
+            <div class="relative">
+                <button id="langSwitcherBtn" class="p-2 bg-white dark:bg-gray-700 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m4 13l4-4M19 9l-4 4M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </button>
+                <div id="langMenu" class="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden z-20 hidden">
+                    <a href="#" id="lang-tr" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Türkçe</a>
+                    <a href="#" id="lang-en" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">English</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicle Entry Module -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 mb-6">
+            <h2 class="text-2xl font-bold mb-4" data-lang="newVehicleEntry">Yeni Araç Girişi</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 items-end">
+                <div class="lg:col-span-1"><label for="plateNumber" class="block text-sm font-medium mb-1" data-lang="plate">Plaka</label><input type="text" id="plateNumber" data-lang-placeholder="platePlaceholder" placeholder="34 ABC 123" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500"></div>
+                <div class="lg:col-span-1"><label for="vehicleType" class="block text-sm font-medium mb-1" data-lang="vehicleType">Araç Tipi</label><select id="vehicleType" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="otomobil" data-lang="car">Otomobil</option><option value="minibus" data-lang="minibus">Minibüs / Kamyonet</option><option value="otobus" data-lang="bus">Otobüs / Kamyon</option></select></div>
+                <div class="lg:col-span-1"><label class="block text-sm font-medium mb-1" data-lang="arrivalTime">Giriş Saati</label><div class="flex items-center space-x-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-2 focus-within:ring-2 focus-within:ring-blue-500"><input type="text" id="arrivalHour" maxlength="2" placeholder="HH" class="w-1/2 py-2 bg-transparent text-center outline-none"><span class="font-bold">:</span><input type="text" id="arrivalMinute" maxlength="2" placeholder="MM" class="w-1/2 py-2 bg-transparent text-center outline-none"></div></div>
+                <div class="lg:col-span-1"><label for="note" class="block text-sm font-medium mb-1" data-lang="note">Not</label><input type="text" id="note" data-lang-placeholder="notePlaceholder" placeholder="Ekstra notlar..." class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500"></div>
+                <div class="flex items-center pb-2"><input id="keyHanded" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"><label for="keyHanded" class="ml-2 block text-sm" data-lang="key">Anahtar</label></div>
+                <div class="flex items-center pb-2"><input id="creditCard" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"><label for="creditCard" class="ml-2 block text-sm" data-lang="creditCard">K. Kartı</label></div>
+                <div class="lg:col-span-1"><button id="addVehicleBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300" data-lang="addVehicle">Araç Ekle</button></div>
+            </div>
+             <div id="messageBox" class="hidden mt-4 p-3 rounded-lg text-center text-sm"><p id="messageText"></p></div>
+        </div>
+
+        <!-- Manual Past Entry Module -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4 text-gray-600 dark:text-gray-300" data-lang="addPastRecord">Geçmiş Kayıt Ekle</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 items-end">
+                 <div class="lg:col-span-1"><label for="pastPlate" class="block text-sm font-medium mb-1" data-lang="plate">Plaka</label><input type="text" id="pastPlate" data-lang-placeholder="platePlaceholder" placeholder="34 XYZ 789" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg"></div>
+                 <div class="lg:col-span-1"><label for="pastVehicleType" class="block text-sm font-medium mb-1" data-lang="vehicleType">Araç Tipi</label><select id="pastVehicleType" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg"><option value="otomobil" data-lang="car">Otomobil</option><option value="minibus" data-lang="minibus">Minibüs / Kamyonet</option><option value="otobus" data-lang="bus">Otobüs / Kamyon</option></select></div>
+                 <div class="lg:col-span-1"><label class="block text-sm font-medium mb-1" data-lang="arrivalTime">Giriş Saati</label><div class="flex items-center space-x-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-2"><input type="text" id="pastArrivalHour" maxlength="2" placeholder="HH" class="w-1/2 py-2 bg-transparent text-center outline-none"><span class="font-bold">:</span><input type="text" id="pastArrivalMinute" maxlength="2" placeholder="MM" class="w-1/2 py-2 bg-transparent text-center outline-none"></div></div>
+                 <div class="lg:col-span-1"><label class="block text-sm font-medium mb-1" data-lang="departureTime">Çıkış Saati</label><div class="flex items-center space-x-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-2"><input type="text" id="pastDepartureHour" maxlength="2" placeholder="HH" class="w-1/2 py-2 bg-transparent text-center outline-none"><span class="font-bold">:</span><input type="text" id="pastDepartureMinute" maxlength="2" placeholder="MM" class="w-1/2 py-2 bg-transparent text-center outline-none"></div></div>
+                 <div class="lg:col-span-1"><label for="pastFee" class="block text-sm font-medium mb-1" data-lang="feePaid">Ödenen Ücret</label><input type="number" id="pastFee" placeholder="TL" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg"></div>
+                 <div class="flex items-center pb-2"><input id="pastCreditCard" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"><label for="pastCreditCard" class="ml-2 block text-sm" data-lang="creditCard">K. Kartı</label></div>
+                 <div class="lg:col-span-1"><button id="addPastRecordBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300" data-lang="save">Kaydet</button></div>
+            </div>
+        </div>
+
+        <!-- Car Tracking Table -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold" data-lang="dailyReport">Günlük Rapor</h2>
+                <div class="flex space-x-2">
+                    <input type="file" id="csvFileInput" class="hidden" accept=".csv">
+                    <button id="importCsvBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-lg text-xs transition-colors duration-300" data-lang="importCsv">CSV'den Aktar</button>
+                    <button id="exportCsvBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-lg text-xs transition-colors duration-300" data-lang="exportCsv">CSV Olarak Aktar</button>
+                    <button id="resetListBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-lg text-xs transition-colors duration-300" data-confirming="false" data-lang="resetList">Listeyi Sıfırla</button>
+                </div>
+            </div>
+            <!-- Summary Dashboard -->
+            <div id="summaryBar" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div><p class="text-sm text-gray-500 dark:text-gray-400" data-lang="cashRevenue">Nakit Kazanç</p><p id="totalCashRevenue" class="text-2xl font-bold text-green-600 dark:text-green-400">0 TL</p></div>
+                <div><p class="text-sm text-gray-500 dark:text-gray-400" data-lang="creditRevenue">Kredi</p><p id="totalCreditCardRevenue" class="text-2xl font-bold text-purple-600 dark:text-purple-400">0 TL</p></div>
+                <div><p class="text-sm text-gray-500 dark:text-gray-400" data-lang="vehiclesInside">İçerideki Araç</p><p id="unpaidCount" class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">0</p></div>
+                <div><p class="text-sm text-gray-500 dark:text-gray-400" data-lang="vehiclesDeparted">Çıkış Yapan Araç</p><p id="paidCount" class="text-2xl font-bold text-blue-600 dark:text-blue-400">0</p></div>
+            </div>
+            <div class="table-container border border-gray-200 dark:border-gray-700 rounded-lg">
+                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                    <thead class="text-xs text-gray-700 uppercase dark:text-gray-400">
+                        <tr>
+                            <th scope="col" class="px-4 py-3 bg-gray-50 dark:bg-gray-700" data-lang="tableNo">No</th>
+                            <th scope="col" class="px-6 py-3 bg-gray-50 dark:bg-gray-700" data-lang="tablePlate">Plaka</th>
+                            <th scope="col" class="px-6 py-3 bg-gray-50 dark:bg-gray-700" data-lang="tableKey">Anahtar</th>
+                            <th scope="col" class="px-6 py-3 bg-gray-50 dark:bg-gray-700" data-lang="tableArrival">Giriş Saati</th>
+                            <th scope="col" class="px-6 py-3 bg-gray-50 dark:bg-gray-700" data-lang="tableDeparture">Çıkış Saati</th>
+                            <th scope="col" class="px-6 py-3 bg-gray-50 dark:bg-gray-700" data-lang="tableFee">Ücret</th>
+                            <th scope="col" class="px-6 py-3 bg-gray-50 dark:bg-gray-700" data-lang="tableNote">Not</th>
+                            <th scope="col" class="px-6 py-3 text-center bg-gray-50 dark:bg-gray-700" data-lang="tableAction">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="carRecordsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, getDocs, writeBatch, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // Firebase Config - Provided by the environment
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'parking-app-default';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        // DOM ELEMENTS
+        const plateNumberInput = document.getElementById('plateNumber'), vehicleTypeSelect = document.getElementById('vehicleType'), arrivalHourInput = document.getElementById('arrivalHour'), arrivalMinuteInput = document.getElementById('arrivalMinute'), noteInput = document.getElementById('note'), keyHandedInput = document.getElementById('keyHanded'), creditCardInput = document.getElementById('creditCard'), addVehicleBtn = document.getElementById('addVehicleBtn');
+        const pastPlateInput = document.getElementById('pastPlate'), pastVehicleTypeSelect = document.getElementById('pastVehicleType'), pastArrivalHourInput = document.getElementById('pastArrivalHour'), pastArrivalMinuteInput = document.getElementById('pastArrivalMinute'), pastDepartureHourInput = document.getElementById('pastDepartureHour'), pastDepartureMinuteInput = document.getElementById('pastDepartureMinute'), pastFeeInput = document.getElementById('pastFee'), pastCreditCardInput = document.getElementById('pastCreditCard'), addPastRecordBtn = document.getElementById('addPastRecordBtn');
+        const carRecordsTableBody = document.getElementById('carRecordsTableBody'), messageBox = document.getElementById('messageBox'), messageText = document.getElementById('messageText'), resetListBtn = document.getElementById('resetListBtn'), exportCsvBtn = document.getElementById('exportCsvBtn'), importCsvBtn = document.getElementById('importCsvBtn'), csvFileInput = document.getElementById('csvFileInput');
+        const totalCashRevenueEl = document.getElementById('totalCashRevenue'), totalCreditCardRevenueEl = document.getElementById('totalCreditCardRevenue'), unpaidCountEl = document.getElementById('unpaidCount'), paidCountEl = document.getElementById('paidCount');
+        const langSwitcherBtn = document.getElementById('langSwitcherBtn'), langMenu = document.getElementById('langMenu'), langTrBtn = document.getElementById('lang-tr'), langEnBtn = document.getElementById('lang-en');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const confirmationModal = document.getElementById('confirmation-modal'), modalText = document.getElementById('modal-text'), modalConfirmBtn = document.getElementById('modal-confirm-btn'), modalCancelBtn = document.getElementById('modal-cancel-btn');
+
+        // APP STATE
+        let vehicleRecords = [], recordCounter = 0, resetTimeout = null, currentLanguage = 'tr', userId = null;
+        let recordsCollection;
+        let confirmAction = null;
+
+        // TRANSLATIONS
+        const translations = {
+            loading: { tr: 'Yükleniyor...', en: 'Loading...' },
+            newVehicleEntry: { tr: 'Yeni Araç Girişi', en: 'New Vehicle Entry' },
+            plate: { tr: 'Plaka', en: 'Plate' },
+            platePlaceholder: { tr: '34 ABC 123', en: 'AB-123-CD' },
+            vehicleType: { tr: 'Araç Tipi', en: 'Vehicle Type' },
+            car: { tr: 'Otomobil', en: 'Car' },
+            minibus: { tr: 'Minibüs / Kamyonet', en: 'Minibus / Van' },
+            bus: { tr: 'Otobüs / Kamyon', en: 'Bus / Truck' },
+            arrivalTime: { tr: 'Giriş Saati', en: 'Arrival Time' },
+            note: { tr: 'Not', en: 'Note' },
+            notePlaceholder: { tr: 'Ekstra notlar...', en: 'Extra notes...' },
+            key: { tr: 'Anahtar', en: 'Key' },
+            creditCard: { tr: 'K. Kartı', en: 'Credit Card' },
+            addVehicle: { tr: 'Araç Ekle', en: 'Add Vehicle' },
+            addPastRecord: { tr: 'Geçmiş Kayıt Ekle', en: 'Add Past Record' },
+            departureTime: { tr: 'Çıkış Saati', en: 'Departure Time' },
+            feePaid: { tr: 'Ödenen Ücret', en: 'Fee Paid' },
+            save: { tr: 'Kaydet', en: 'Save' },
+            dailyReport: { tr: 'Günlük Rapor', en: 'Daily Report' },
+            importCsv: { tr: "CSV'den Aktar", en: 'Import from CSV' },
+            exportCsv: { tr: 'CSV Olarak Aktar', en: 'Export to CSV' },
+            resetList: { tr: 'Listeyi Sıfırla', en: 'Reset List' },
+            cashRevenue: { tr: 'Nakit Kazanç', en: 'Cash Revenue' },
+            creditRevenue: { tr: 'Kredi', en: 'Credit' },
+            vehiclesInside: { tr: 'İçerideki Araç', en: 'Vehicles Inside' },
+            vehiclesDeparted: { tr: 'Çıkış Yapan Araç', en: 'Vehicles Departed' },
+            tableNo: { tr: 'No', en: '#' },
+            tablePlate: { tr: 'Plaka', en: 'Plate' },
+            tableKey: { tr: 'Anahtar', en: 'Key' },
+            tableArrival: { tr: 'Giriş Saati', en: 'Arrival' },
+            tableDeparture: { tr: 'Çıkış Saati', en: 'Departure' },
+            tableFee: { tr: 'Ücret', en: 'Fee' },
+            tableNote: { tr: 'Not', en: 'Note' },
+            tableAction: { tr: 'İşlem', en: 'Action' },
+            paymentMethod: { tr: 'Ödeme Yöntemi', en: 'Payment Method' },
+            cash: { tr: 'Nakit', en: 'Cash' },
+            noVehicles: { tr: 'Otoparkta hiç araç yok.', en: 'No vehicles in the parking lot.' },
+            paid: { tr: 'Ödendi', en: 'Paid' },
+            depart: { tr: 'Çıkış', en: 'Depart' },
+            deleteRecord: { tr: 'Sil', en: 'Delete' },
+            togglePayment: { tr: 'Ödeme yöntemini değiştir', en: 'Toggle payment method' },
+            confirm: { tr: 'Onayla', en: 'Confirm' },
+            cancel: { tr: 'İptal', en: 'Cancel' },
+            confirmReset: { tr: 'TÜMÜNÜ SİL?', en: 'DELETE ALL?' },
+            confirmImport: { tr: 'Mevcut tüm veriler silinecek ve CSV dosyasındaki veriler yüklenecektir. Emin misiniz?', en: 'All current data will be deleted and replaced with data from the CSV file. Are you sure?' },
+            confirmDelete: { tr: 'Emin misin?', en: 'Are you sure?' },
+            errorPlate: { tr: 'Lütfen plaka girin.', en: 'Please enter a plate number.' },
+            errorTime: { tr: 'Lütfen geçerli bir saat girin (SS: 00-23, DD: 00-59).', en: 'Please enter a valid time (HH: 00-23, MM: 00-59).' },
+            errorPastRecord: { tr: 'Lütfen geçmiş kayıt için tüm alanları doğru doldurun.', en: 'Please fill all fields correctly for the past record.' },
+            errorPastRecordStillIn: { tr: 'Lütfen plaka ve giriş saatini girin.', en: 'Please enter plate and arrival time.' },
+            errorDepartureTime: { tr: 'Çıkış saati, giriş saatinden sonra olmalıdır.', en: 'Departure time must be after arrival time.' },
+            errorNoExport: { tr: 'Dışa aktarılacak kayıt yok.', en: 'No records to export.' },
+            errorImport: { tr: 'CSV dosyası okunurken hata oluştu. Lütfen dosya formatını kontrol edin.', en: 'Error reading CSV file. Please check the file format.' },
+            errorPaymentUpdate: { tr: 'Ödeme yöntemi güncellenirken hata oluştu.', en: 'Error updating payment method.' },
+            successListReset: { tr: 'Liste başarıyla sıfırlandı.', en: 'List has been reset successfully.' },
+            successImport: { tr: 'Veriler başarıyla içe aktarıldı.', en: 'Data imported successfully.' },
+            successDelete: { tr: 'Kayıt silindi.', en: 'Record deleted.' },
+            errorDelete: { tr: 'Kayıt silinirken hata oluştu.', en: 'Error deleting record.' },
+            errorAuth: { tr: 'Kimlik doğrulama hatası. Lütfen sayfayı yenileyin.', en: 'Authentication error. Please refresh the page.'},
+            successExport: { tr: 'Kayıtlar CSV olarak indiriliyor.', en: 'Records are being downloaded as CSV.' },
+        };
+
+        // --- FUNCTIONS ---
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            document.documentElement.lang = lang;
+            document.title = lang === 'tr' ? 'Otopark Yönetim Sistemi' : 'Parking Management System';
+            document.querySelectorAll('[data-lang]').forEach(el => {
+                const key = el.dataset.lang;
+                if (translations[key] && translations[key][lang]) el.textContent = translations[key][lang];
+            });
+            document.querySelectorAll('[data-lang-placeholder]').forEach(el => {
+                const key = el.dataset.langPlaceholder;
+                if (translations[key] && translations[key][lang]) el.placeholder = translations[key][lang];
+            });
+            renderTable();
+        }
+
+        function showMessage(messageKey, isError = true) {
+            if (!translations[messageKey] || !translations[messageKey][currentLanguage]) {
+                console.error('Missing translation for key:', messageKey);
+                messageText.textContent = messageKey; // Fallback to key name
+            } else {
+                messageText.textContent = translations[messageKey][currentLanguage];
+            }
+            messageBox.className = `p-3 rounded-lg text-center text-sm mt-4 border ${isError ? 'bg-red-100 dark:bg-red-900/50 border-red-400 text-red-700' : 'bg-green-100 dark:bg-green-900/50 border-green-400 text-green-700'}`;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => { messageBox.className += ' hidden'; }, 3000);
+        }
+
+        function formatDateTimeForDisplay(date) {
+            if (!date) return '---';
+            const pad = (num) => num.toString().padStart(2, '0');
+            return `${pad(date.getDate())}/${pad(date.getMonth() + 1)} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+        }
+        
+        function setDefaultArrivalTime() {
+            const now = new Date();
+            arrivalHourInput.value = now.getHours().toString().padStart(2, '0');
+            arrivalMinuteInput.value = now.getMinutes().toString().padStart(2, '0');
+        }
+
+        function calculateFee(hours, vehicleType) {
+            const rates = { otomobil: { "1": 75, "2": 90, "4": 120, "6": 135, "8": 150, "12": 200, "24": 250 }, minibus:  { "1": 90, "2": 120, "4": 135, "6": 150, "8": 200, "12": 250, "24": 300 }, otobus:   { "1": 100, "2": 150, "4": 200, "6": 250, "8": 300, "12": 350, "24": 400 } };
+            const vehicleRates = rates[vehicleType];
+            if (!vehicleRates) {
+                console.error("Invalid vehicle type provided to calculateFee:", vehicleType);
+                return 0; 
+            }
+            const dailyRate = vehicleRates["24"];
+            if (hours <= 0) return 0;
+            if (hours > 24) {
+                let totalFee = Math.floor(hours / 24) * dailyRate;
+                const remainingHours = hours % 24;
+                if (remainingHours > 0) {
+                    for (const tier of Object.keys(vehicleRates).map(Number).sort((a, b) => a - b)) { if (remainingHours <= tier) { totalFee += vehicleRates[tier.toString()]; break; } }
+                }
+                return totalFee;
+            }
+            for (const tier of Object.keys(vehicleRates).map(Number).sort((a, b) => a - b)) { if (hours <= tier) return vehicleRates[tier.toString()]; }
+            return dailyRate;
+        }
+
+        function updateSummaryStats() {
+            const totalCashRevenue = vehicleRecords.filter(r => r.departed && !r.paidByCreditCard).reduce((sum, r) => sum + (r.fee || 0), 0);
+            const totalCreditCardRevenue = vehicleRecords.filter(r => r.departed && r.paidByCreditCard).reduce((sum, r) => sum + (r.fee || 0), 0);
+            const unpaidCount = vehicleRecords.filter(r => !r.departed).length;
+            const paidCount = vehicleRecords.filter(r => r.departed).length;
+            totalCashRevenueEl.textContent = `${totalCashRevenue} TL`;
+            totalCreditCardRevenueEl.textContent = `${totalCreditCardRevenue} TL`;
+            unpaidCountEl.textContent = unpaidCount;
+            paidCountEl.textContent = paidCount;
+        }
+
+        function renderTable() {
+            carRecordsTableBody.innerHTML = vehicleRecords.length === 0 ? `<tr><td colspan="8" class="text-center py-8 text-gray-500">${translations.noVehicles[currentLanguage]}</td></tr>` : '';
+            const sortedRecords = [...vehicleRecords].sort((a,b) => b.arrival.getTime() - a.arrival.getTime());
+            sortedRecords.forEach(record => {
+                const newRow = carRecordsTableBody.insertRow();
+                newRow.className = record.departed ? 'departed-row' : '';
+                
+                let feeHTML = '---';
+                if (record.departed && record.fee != null) {
+                    const paymentMethodText = record.paidByCreditCard ? `(KK)` : `(N)`;
+                    const paymentMethodClass = record.paidByCreditCard ? 'text-purple-600 hover:text-purple-800' : 'text-green-600 hover:text-green-800';
+                    const toggleTitle = translations.togglePayment[currentLanguage];
+                    feeHTML = `<div class="flex items-center justify-start">
+                                   <span>${record.fee} TL</span>
+                                   <button class="payment-toggle-btn ml-2 font-semibold ${paymentMethodClass}" data-id="${record.id}" title="${toggleTitle}">${paymentMethodText}</button>
+                               </div>`;
+                } else if (record.fee != null) {
+                     feeHTML = `${record.fee} TL`;
+                }
+                
+                let actionButtonHTML = '';
+                const deleteButtonHTML = `<button class="delete-btn bg-gray-400 hover:bg-gray-500 text-white p-1 rounded-full" data-id="${record.id}" title="${translations.deleteRecord[currentLanguage]}"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>`;
+
+                if (record.departed) {
+                    actionButtonHTML = `<div class="flex items-center justify-center space-x-2"><span class="font-bold text-green-500">${translations.paid[currentLanguage]}</span>${deleteButtonHTML}</div>`;
+                } else {
+                    actionButtonHTML = `<div class="flex items-center justify-center space-x-2"><button class="depart-btn flex-grow bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-2 rounded-lg text-xs" data-id="${record.id}">${translations.depart[currentLanguage]}</button>${deleteButtonHTML}</div>`;
+                }
+
+                newRow.innerHTML = `<td class="px-4 py-4">${record.recordId}</td><th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">${record.plate}</th><td class="px-6 py-4">${record.key ? 'Var' : 'Yok'}</td><td class="px-6 py-4">${formatDateTimeForDisplay(record.arrival)}</td><td class="px-6 py-4">${formatDateTimeForDisplay(record.departure)}</td><td class="px-6 py-4 font-bold">${feeHTML}</td><td class="px-6 py-4">${record.note || '-'}</td><td class="px-6 py-4 text-center">${actionButtonHTML}</td>`;
+            });
+            updateSummaryStats();
+        }
+
+        async function handleDeparture(recordId) {
+            const record = vehicleRecords.find(r => r.id === recordId);
+            if (record && !record.departed) {
+                const departureTime = new Date();
+                const durationInHours = (departureTime.getTime() - record.arrival.getTime()) / 3600000;
+                const fee = calculateFee(durationInHours, record.type);
+                
+                const recordRef = doc(recordsCollection, recordId);
+                await updateDoc(recordRef, {
+                    departure: Timestamp.fromDate(departureTime),
+                    fee: fee,
+                    departed: true
+                });
+            }
+        }
+
+        async function handlePaymentToggle(recordId) {
+            const record = vehicleRecords.find(r => r.id === recordId);
+            if (record && record.departed) {
+                const newPaymentMethod = !record.paidByCreditCard;
+                const recordRef = doc(recordsCollection, recordId);
+                try {
+                    await updateDoc(recordRef, { paidByCreditCard: newPaymentMethod });
+                } catch (error) {
+                    console.error("Error updating payment method:", error);
+                    showMessage("errorPaymentUpdate", true);
+                }
+            }
+        }
+        
+        function revertResetButtonState() {
+            resetListBtn.textContent = translations.resetList[currentLanguage];
+            resetListBtn.className = 'bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-lg text-xs transition-colors duration-300';
+            resetListBtn.dataset.confirming = 'false';
+            clearTimeout(resetTimeout);
+        }
+
+        function exportToCsv() {
+            if (!userId) { return showMessage('errorAuth', true); }
+            if (vehicleRecords.length === 0) { return showMessage("errorNoExport", true); }
+            const headers = [translations.tableNo[currentLanguage], translations.tablePlate[currentLanguage], translations.tableKey[currentLanguage], translations.tableArrival[currentLanguage], translations.tableDeparture[currentLanguage], `${translations.tableFee[currentLanguage]} (TL)`, translations.paymentMethod[currentLanguage], translations.tableNote[currentLanguage]];
+            const formatDateTimeForCsv = (date) => date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}` : '';
+            const csvRows = [headers.join(',')];
+            vehicleRecords.forEach(record => {
+                const row = [record.recordId, record.plate, record.key ? 'Var' : 'Yok', formatDateTimeForCsv(record.arrival), formatDateTimeForCsv(record.departure), record.fee || 0, record.paidByCreditCard ? translations.creditCard[currentLanguage] : translations.cash[currentLanguage], `"${(record.note || '').replace(/"/g, '""')}"`];
+                csvRows.push(row.join(','));
+            });
+            const blob = new Blob(['\uFEFF' + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const today = new Date();
+            link.href = URL.createObjectURL(blob);
+            link.download = `parking-records-${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showMessage("successExport", false);
+        }
+
+        async function addVehicle(record) {
+            if (!userId) { return showMessage('errorAuth', true); }
+            try {
+                await addDoc(recordsCollection, {
+                    ...record,
+                    arrival: Timestamp.fromDate(record.arrival),
+                    departure: record.departure ? Timestamp.fromDate(record.departure) : null
+                });
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                showMessage("errorPastRecord", true); // Generic error
+            }
+        }
+        
+        function showConfirmationModal(messageKey, onConfirm) {
+            modalText.textContent = translations[messageKey][currentLanguage];
+            confirmationModal.classList.remove('hidden');
+            confirmAction = onConfirm;
+        }
+
+        // --- EVENT LISTENERS ---
+        modalCancelBtn.addEventListener('click', () => {
+            confirmationModal.classList.add('hidden');
+            confirmAction = null;
+        });
+
+        modalConfirmBtn.addEventListener('click', () => {
+            if (typeof confirmAction === 'function') {
+                confirmAction();
+            }
+            confirmationModal.classList.add('hidden');
+            confirmAction = null;
+        });
+
+        addVehicleBtn.addEventListener('click', () => {
+            const plate = plateNumberInput.value.trim().toUpperCase(), hour = parseInt(arrivalHourInput.value, 10), minute = parseInt(arrivalMinuteInput.value, 10);
+            if (!plate) return showMessage("errorPlate");
+            if (isNaN(hour) || isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) return showMessage("errorTime");
+            const now = new Date();
+            const arrivalDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute);
+            
+            const newRecord = {
+                recordId: recordCounter + 1,
+                plate: plate, type: vehicleTypeSelect.value, key: keyHandedInput.checked, note: noteInput.value.trim(), arrival: arrivalDate, departure: null, fee: null, departed: false, paidByCreditCard: creditCardInput.checked
+            };
+            addVehicle(newRecord);
+            plateNumberInput.value = ''; noteInput.value = ''; keyHandedInput.checked = false; creditCardInput.checked = false; setDefaultArrivalTime(); plateNumberInput.focus();
+        });
+
+        addPastRecordBtn.addEventListener('click', () => {
+            const plate = pastPlateInput.value.trim().toUpperCase();
+            const arrHour = parseInt(pastArrivalHourInput.value, 10), arrMin = parseInt(pastArrivalMinuteInput.value, 10);
+            const depHourRaw = pastDepartureHourInput.value, depMinRaw = pastDepartureMinuteInput.value;
+            
+            const now = new Date();
+            let newRecord = {};
+
+            if (depHourRaw === '' && depMinRaw === '') {
+                if (!plate || isNaN(arrHour) || isNaN(arrMin)) return showMessage("errorPastRecordStillIn");
+                const arrivalDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), arrHour, arrMin);
+                newRecord = { recordId: recordCounter + 1, plate: plate, type: pastVehicleTypeSelect.value, key: false, note: 'Manuel Giriş', arrival: arrivalDate, departure: null, fee: null, departed: false, paidByCreditCard: pastCreditCardInput.checked };
+            } else {
+                const depHour = parseInt(depHourRaw, 10), depMin = parseInt(depMinRaw, 10), fee = parseFloat(pastFeeInput.value);
+                if (!plate || isNaN(arrHour) || isNaN(arrMin) || isNaN(depHour) || isNaN(depMin) || isNaN(fee)) return showMessage("errorPastRecord");
+                const arrivalDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), arrHour, arrMin);
+                const departureDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), depHour, depMin);
+                if (departureDate <= arrivalDate) return showMessage("errorDepartureTime");
+                newRecord = { recordId: recordCounter + 1, plate: plate, type: pastVehicleTypeSelect.value, key: false, note: 'Manuel Kayıt', arrival: arrivalDate, departure: departureDate, fee: fee, departed: true, paidByCreditCard: pastCreditCardInput.checked };
+            }
+
+            addVehicle(newRecord);
+            [pastPlateInput, pastArrivalHourInput, pastArrivalMinuteInput, pastDepartureHourInput, pastDepartureMinuteInput, pastFeeInput].forEach(el => el.value = '');
+            pastCreditCardInput.checked = false;
+        });
+
+        carRecordsTableBody.addEventListener('click', async (e) => { 
+            if (e.target.closest('.depart-btn')) {
+                handleDeparture(e.target.closest('.depart-btn').dataset.id);
+            }
+            if (e.target.closest('.payment-toggle-btn')) {
+                handlePaymentToggle(e.target.closest('.payment-toggle-btn').dataset.id);
+            }
+            if (e.target.closest('.delete-btn')) {
+                const button = e.target.closest('.delete-btn');
+                const recordId = button.dataset.id;
+                if (button.dataset.confirming === 'true') {
+                    try {
+                        await deleteDoc(doc(recordsCollection, recordId));
+                        showMessage("successDelete", false);
+                    } catch (error) {
+                        console.error("Error deleting record:", error);
+                        showMessage("errorDelete", true);
+                    }
+                } else {
+                    button.dataset.confirming = 'true';
+                    button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
+                    button.classList.remove('bg-gray-400', 'hover:bg-gray-500');
+                    button.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+                    setTimeout(() => {
+                        if (button.dataset.confirming === 'true') {
+                           button.dataset.confirming = 'false';
+                           button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`;
+                           button.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                           button.classList.add('bg-gray-400', 'hover:bg-gray-500');
+                        }
+                    }, 3000);
+                }
+            }
+        });
+        
+        resetListBtn.addEventListener('click', async () => {
+            showConfirmationModal('confirmReset', async () => {
+                 try {
+                    const q = query(recordsCollection);
+                    const querySnapshot = await getDocs(q);
+                    const batch = writeBatch(db);
+                    querySnapshot.forEach((doc) => {
+                        batch.delete(doc.ref);
+                    });
+                    await batch.commit();
+                    showMessage("successListReset", false);
+                } catch (e) {
+                    console.error("Error resetting list: ", e);
+                }
+            });
+        });
+        
+        importCsvBtn.addEventListener('click', () => csvFileInput.click());
+        csvFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            showConfirmationModal('confirmImport', () => {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const text = e.target.result;
+                    const rows = text.split(/\r?\n/);
+                    const header = rows.shift().split(',').map(h => h.trim().replace(/"/g, ''));
+                    
+                    const headerMap = {};
+                    header.forEach((h, i) => { headerMap[h] = i; });
+                    
+                    try {
+                        const q = query(recordsCollection);
+                        const querySnapshot = await getDocs(q);
+                        const deleteBatch = writeBatch(db);
+                        querySnapshot.forEach((doc) => deleteBatch.delete(doc.ref));
+                        await deleteBatch.commit();
+                    } catch(err) {
+                        console.error("Error clearing existing data:", err);
+                        showMessage("errorImport", true);
+                        return;
+                    }
+
+                    const addBatch = writeBatch(db);
+                    rows.forEach(row => {
+                        if (row.trim() === '') return;
+                        const columns = row.split(',');
+                        try {
+                            const newDocRef = doc(collection(db, recordsCollection.path));
+                            const arrivalDate = new Date(columns[headerMap[translations.tableArrival[currentLanguage]]].replace(' ', 'T'));
+                            if (isNaN(arrivalDate)) throw new Error("Invalid arrival date");
+
+                            const departureDateRaw = columns[headerMap[translations.tableDeparture[currentLanguage]]];
+                            let departureDate = null;
+                            if (departureDateRaw) {
+                                const parsedDeparture = new Date(departureDateRaw.replace(' ', 'T'));
+                                if (!isNaN(parsedDeparture)) departureDate = parsedDeparture;
+                            }
+                            
+                            const hasVehicleType = headerMap[translations.vehicleType[currentLanguage]] !== undefined;
+                            const record = {
+                                recordId: parseInt(columns[headerMap[translations.tableNo[currentLanguage]]]),
+                                plate: columns[headerMap[translations.tablePlate[currentLanguage]]],
+                                type: hasVehicleType ? columns[headerMap[translations.vehicleType[currentLanguage]]] : 'otomobil',
+                                key: columns[headerMap[translations.tableKey[currentLanguage]]] === 'Var' || columns[headerMap[translations.tableKey[currentLanguage]]] === 'Yes',
+                                arrival: Timestamp.fromDate(arrivalDate),
+                                departure: departureDate ? Timestamp.fromDate(departureDate) : null,
+                                fee: parseFloat(columns[headerMap[`${translations.tableFee[currentLanguage]} (TL)`]]) || null,
+                                paidByCreditCard: columns[headerMap[translations.paymentMethod[currentLanguage]]] === translations.creditCard[currentLanguage],
+                                note: columns[headerMap[translations.tableNote[currentLanguage]]] ? columns[headerMap[translations.tableNote[currentLanguage]]].replace(/"/g, '') : '',
+                                departed: !!departureDate
+                            };
+                            addBatch.set(newDocRef, record);
+                        } catch(err) {
+                            console.error("Error parsing row:", row, err);
+                        }
+                    });
+
+                    try {
+                        await addBatch.commit();
+                        showMessage("successImport", false);
+                    } catch(err) {
+                        console.error("Error importing data:", err);
+                        showMessage("errorImport", true);
+                    }
+                };
+                reader.readAsText(file, 'UTF-8');
+            });
+            csvFileInput.value = '';
+        });
+
+        exportCsvBtn.addEventListener('click', exportToCsv);
+        
+        langSwitcherBtn.addEventListener('click', (e) => { e.stopPropagation(); langMenu.classList.toggle('hidden'); });
+        langTrBtn.addEventListener('click', (e) => { e.preventDefault(); setLanguage('tr'); langMenu.classList.add('hidden'); });
+        langEnBtn.addEventListener('click', (e) => { e.preventDefault(); setLanguage('en'); langMenu.classList.add('hidden'); });
+        window.addEventListener('click', () => { if (!langMenu.classList.contains('hidden')) langMenu.classList.add('hidden'); });
+
+        [arrivalHourInput, pastArrivalHourInput, pastDepartureHourInput].forEach(el => el.addEventListener('input', (e) => { if (e.target.value.length >= 2) e.target.nextElementSibling.nextElementSibling.focus(); }));
+        [arrivalHourInput, arrivalMinuteInput, pastArrivalHourInput, pastArrivalMinuteInput, pastDepartureHourInput, pastDepartureMinuteInput].forEach(el => el.addEventListener('input', (e) => { e.target.value = e.target.value.replace(/[^0-9]/g, ''); }));
+
+        // --- INITIALIZATION ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userId = user.uid;
+                const collectionPath = `artifacts/${appId}/users/${userId}/records`;
+                recordsCollection = collection(db, collectionPath);
+
+                onSnapshot(recordsCollection, (snapshot) => {
+                    vehicleRecords = [];
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        if (data.arrival && data.arrival.toDate) {
+                             vehicleRecords.push({
+                                id: doc.id,
+                                ...data,
+                                arrival: data.arrival.toDate(),
+                                departure: data.departure && data.departure.toDate ? data.departure.toDate() : null
+                            });
+                        } else {
+                            console.warn("Skipping invalid record:", doc.id, data);
+                        }
+                    });
+                    recordCounter = vehicleRecords.reduce((max, r) => Math.max(max, r.recordId || 0), 0);
+                    renderTable();
+                    loadingOverlay.classList.add('hidden');
+                }, (error) => {
+                    console.error("Error with snapshot listener:", error);
+                    loadingOverlay.classList.add('hidden');
+                });
+            } else {
+                 signInAnonymously(auth).catch((error) => {
+                    console.error("Anonymous sign-in failed: ", error);
+                    loadingOverlay.classList.add('hidden');
+                });
+            }
+        });
+
+        setLanguage('tr');
+        setDefaultArrivalTime();
+
+    </script>
+</body>
+</html>
