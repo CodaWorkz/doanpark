@@ -7,6 +7,8 @@ const langSwitcherBtn = document.getElementById('langSwitcherBtn'), langMenu = d
 const loadingOverlay = document.getElementById('loading-overlay');
 const confirmationModal = document.getElementById('confirmation-modal'), modalText = document.getElementById('modal-text'), modalConfirmBtn = document.getElementById('modal-confirm-btn'), modalCancelBtn = document.getElementById('modal-cancel-btn');
 const paymentModal = document.getElementById('payment-modal'), paymentFeeEl = document.getElementById('payment-fee'), paymentCashBtn = document.getElementById('payment-cash-btn'), paymentCardBtn = document.getElementById('payment-card-btn');
+const tabButtons = document.querySelectorAll('.tab-button');
+const tabPanels = document.querySelectorAll('.tab-panel');
 
 // --- APP STATE ---
 let vehicleRecords = [];
@@ -272,6 +274,33 @@ paymentCardBtn.addEventListener('click', () => {
     if (typeof departureAction === 'function') {
         departureAction(true);
     }
+});
+// --- TAB SWITCHING LOGIC ---
+tabButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        // De-select all buttons
+        tabButtons.forEach(btn => {
+            btn.classList.remove('active');
+            // Re-apply default non-active styles
+            btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'dark:text-gray-400', 'dark:hover:text-gray-300', 'dark:hover:border-gray-600');
+        });
+
+        // Select the clicked button
+        button.classList.add('active');
+        button.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'dark:text-gray-400', 'dark:hover:text-gray-300', 'dark:hover:border-gray-600');
+
+        // Hide all panels
+        tabPanels.forEach(panel => {
+            panel.classList.add('hidden');
+        });
+
+        // Show the correct panel
+        const targetPanelId = button.dataset.tab;
+        const targetPanel = document.getElementById(targetPanelId);
+        if(targetPanel) {
+            targetPanel.classList.remove('hidden');
+        }
+    });
 });
 
 addVehicleBtn.addEventListener('click', () => {

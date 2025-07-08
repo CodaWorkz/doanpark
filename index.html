@@ -52,8 +52,20 @@
         </div>
 
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 mb-6">
-            <h2 class="text-2xl font-bold mb-4" data-lang="newVehicleEntry">Yeni Araç Girişi</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 items-end">
+    <div class="border-b border-gray-200 dark:border-gray-700">
+        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+            <button id="tab-new" type="button" class="tab-button active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="panel-new">
+                Yeni Araç Girişi
+            </button>
+            <button id="tab-past" type="button" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600" data-tab="panel-past">
+                Geçmiş Kayıt Ekle
+            </button>
+        </nav>
+    </div>
+
+    <div class="pt-6">
+        <div id="panel-new" class="tab-panel">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
                 <div class="lg:col-span-1"><label for="plateNumber" class="block text-sm font-medium mb-1" data-lang="plate">Plaka</label><input type="text" id="plateNumber" data-lang-placeholder="platePlaceholder" placeholder="34 ABC 123" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500"></div>
                 <div class="lg:col-span-1"><label for="vehicleType" class="block text-sm font-medium mb-1" data-lang="vehicleType">Araç Tipi</label><select id="vehicleType" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="otomobil" data-lang="car">Otomobil</option><option value="minibus" data-lang="minibus">Minibüs / Kamyonet</option><option value="otobus" data-lang="bus">Otobüs / Kamyon</option></select></div>
                 <div class="lg:col-span-1"><label class="block text-sm font-medium mb-1" data-lang="arrivalTime">Giriş Saati</label><div class="flex items-center space-x-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-2 focus-within:ring-2 focus-within:ring-blue-500"><input type="text" id="arrivalHour" maxlength="2" placeholder="HH" class="w-1/2 py-2 bg-transparent text-center outline-none"><span class="font-bold">:</span><input type="text" id="arrivalMinute" maxlength="2" placeholder="MM" class="w-1/2 py-2 bg-transparent text-center outline-none"></div></div>
@@ -61,11 +73,9 @@
                 <div class="flex items-center pb-2"><input id="keyHanded" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"><label for="keyHanded" class="ml-2 block text-sm" data-lang="key">Anahtar</label></div>
                 <div class="lg:col-span-1"><button id="addVehicleBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300" data-lang="addVehicle">Araç Ekle</button></div>
             </div>
-             <div id="messageBox" class="hidden mt-4 p-3 rounded-lg text-center text-sm"><p id="messageText"></p></div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 mb-8">
-            <h2 class="text-xl font-bold mb-4 text-gray-600 dark:text-gray-300" data-lang="addPastRecord">Geçmiş Kayıt Ekle</h2>
+        <div id="panel-past" class="tab-panel hidden">
             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 items-end">
                  <div class="lg:col-span-1"><label for="pastPlate" class="block text-sm font-medium mb-1" data-lang="plate">Plaka</label><input type="text" id="pastPlate" data-lang-placeholder="platePlaceholder" placeholder="34 XYZ 789" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg"></div>
                  <div class="lg:col-span-1"><label for="pastVehicleType" class="block text-sm font-medium mb-1" data-lang="vehicleType">Araç Tipi</label><select id="pastVehicleType" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg"><option value="otomobil" data-lang="car">Otomobil</option><option value="minibus" data-lang="minibus">Minibüs / Kamyonet</option><option value="otobus" data-lang="bus">Otobüs / Kamyon</option></select></div>
@@ -76,6 +86,9 @@
                  <div class="lg:col-span-1"><button id="addPastRecordBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300" data-lang="save">Kaydet</button></div>
             </div>
         </div>
+    </div>
+    <div id="messageBox" class="hidden mt-4 p-3 rounded-lg text-center text-sm"><p id="messageText"></p></div>
+</div>
 
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6">
             <div class="flex justify-between items-center mb-4">
