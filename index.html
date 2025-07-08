@@ -22,7 +22,6 @@
         <div class="text-white text-xl" data-lang="loading">Yükleniyor...</div>
     </div>
     
-    <!-- Custom Confirmation Modal -->
     <div id="confirmation-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
             <p id="modal-text" class="text-lg mb-6"></p>
@@ -33,7 +32,6 @@
         </div>
     </div>
     
-    <!-- Payment Method Modal -->
     <div id="payment-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
             <h3 class="text-xl font-bold mb-2" data-lang="paymentMethod">Ödeme Yöntemi</h3>
@@ -47,7 +45,6 @@
 
 
     <div class="container mx-auto p-4 lg:p-6 relative">
-        <!-- Language Switcher -->
         <div class="absolute top-4 right-4 lg:top-6 lg:right-6">
             <div class="relative">
                 <button id="langSwitcherBtn" class="p-2 bg-white dark:bg-gray-700 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
@@ -60,7 +57,6 @@
             </div>
         </div>
 
-        <!-- Vehicle Entry Module -->
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 mb-6">
             <h2 class="text-2xl font-bold mb-4" data-lang="newVehicleEntry">Yeni Araç Girişi</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
@@ -74,7 +70,6 @@
              <div id="messageBox" class="hidden mt-4 p-3 rounded-lg text-center text-sm"><p id="messageText"></p></div>
         </div>
 
-        <!-- Manual Past Entry Module -->
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 mb-8">
             <h2 class="text-xl font-bold mb-4 text-gray-600 dark:text-gray-300" data-lang="addPastRecord">Geçmiş Kayıt Ekle</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 items-end">
@@ -88,7 +83,6 @@
             </div>
         </div>
 
-        <!-- Car Tracking Table -->
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold" data-lang="dailyReport">Günlük Rapor</h2>
@@ -99,7 +93,6 @@
                     <button id="resetListBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-lg text-xs transition-colors duration-300" data-confirming="false" data-lang="resetList">Listeyi Sıfırla</button>
                 </div>
             </div>
-            <!-- Summary Dashboard -->
             <div id="summaryBar" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                 <div><p class="text-sm text-gray-500 dark:text-gray-400" data-lang="cashRevenue">Nakit Kazanç</p><p id="totalCashRevenue" class="text-2xl font-bold text-green-600 dark:text-green-400">0 TL</p></div>
                 <div><p class="text-sm text-gray-500 dark:text-gray-400" data-lang="creditRevenue">Kredi</p><p id="totalCreditCardRevenue" class="text-2xl font-bold text-purple-600 dark:text-purple-400">0 TL</p></div>
@@ -132,9 +125,18 @@
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, getDocs, writeBatch, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // Firebase Config - Provided by the environment
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'parking-app-default';
+        // --- START: CORRECTED FIREBASE CONFIG ---
+        const firebaseConfig = {
+            "apiKey": "AIzaSyDCZwu4BgLc6QPWxTYc0jS9mWWpqFycHCQ",
+            "authDomain": "dogan-park.firebaseapp.com",
+            "projectId": "dogan-park",
+            "storageBucket": "dogan-park.firebasestorage.app",
+            "messagingSenderId": "349280563442",
+            "appId": "1:349280563442:web:25eb7aa1bebd6553df206b",
+            "measurementId": "G-XYBZNVFNJ2"
+        };
+        const appId = "dogan-park";
+        // --- END: CORRECTED FIREBASE CONFIG ---
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -327,12 +329,10 @@
             updateSummaryStats();
         }
 
-        async function finalizeDeparture(recordId, isCreditCard) {
+        async function finalizeDeparture(recordId, fee, isCreditCard) {
             const record = vehicleRecords.find(r => r.id === recordId);
             if (record && !record.departed) {
                 const departureTime = new Date();
-                const durationInHours = (departureTime.getTime() - record.arrival.getTime()) / 3600000;
-                const fee = calculateFee(durationInHours, record.type);
                 
                 const recordRef = doc(recordsCollection, recordId);
                 await updateDoc(recordRef, {
@@ -414,7 +414,7 @@
         }
         
         function showConfirmationModal(messageKey, onConfirm) {
-            modalText.textContent = translations[messageKey][currentLanguage];
+            modalText.textContent = translations[key][currentLanguage];
             confirmationModal.classList.remove('hidden');
             confirmAction = onConfirm;
         }
@@ -496,7 +496,7 @@
             if (e.target.closest('.delete-btn')) {
                 const button = e.target.closest('.delete-btn');
                 const recordId = button.dataset.id;
-                if (button.dataset.confirming === 'true') {
+                showConfirmationModal('confirmDelete', async () => {
                     try {
                         await deleteDoc(doc(recordsCollection, recordId));
                         showMessage("successDelete", false);
@@ -504,20 +504,7 @@
                         console.error("Error deleting record:", error);
                         showMessage("errorDelete", true);
                     }
-                } else {
-                    button.dataset.confirming = 'true';
-                    button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
-                    button.classList.remove('bg-gray-400', 'hover:bg-gray-500');
-                    button.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-                    setTimeout(() => {
-                        if (button.dataset.confirming === 'true') {
-                           button.dataset.confirming = 'false';
-                           button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`;
-                           button.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
-                           button.classList.add('bg-gray-400', 'hover:bg-gray-500');
-                        }
-                    }, 3000);
-                }
+                });
             }
         });
         
