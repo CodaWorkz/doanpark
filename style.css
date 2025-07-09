@@ -1,15 +1,80 @@
- body { font-family: 'Inter', sans-serif; }
-        .table-container { max-height: 55vh; overflow-y: auto; }
-        thead th { position: sticky; top: 0; z-index: 10; }
-        .departed-row { background-color: #f3f4f6; }
-        .dark .departed-row { background-color: #374151; }
-        /* Add these styles for the active tab */
-.tab-button.active {
-    border-color: #3B82F6; /* Tailwind's blue-500 */
+/* --- FINAL STYLES --- */
+
+body { 
+    font-family: 'Inter', sans-serif; 
+}
+
+.table-container { 
+    max-height: 55vh; 
+    overflow-y: auto; 
+}
+
+thead th { 
+    position: sticky; 
+    top: 0; 
+    z-index: 10; 
+}
+
+.departed-row { 
+    background-color: #f3f4f6; 
+}
+
+.dark .departed-row { 
+    background-color: #374151; 
+}
+
+/* The container for each tab button */
+.tab-wrapper {
+    transition: all 0.2s ease-in-out;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+    background-color: #F3F4F6; /* Inactive background */
+    border: 1px solid #E5E7EB;
+    border-bottom: none;
+    margin-right: 0.5rem;
+}
+
+/* The button inside the wrapper */
+.tab-button {
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    color: #6B7280; /* Inactive text color */
+}
+
+/* Make inactive tabs slightly brighter on hover */
+.tab-wrapper:not(.active):hover {
+    background-color: #F9FAFB;
+}
+
+/* The ACTIVE tab's wrapper */
+.tab-wrapper.active {
+    background-color: white;
+    transform: translateY(1px);
+    border-bottom: 1px solid white; /* Hides bottom border to connect to panel */
+    z-index: 5; /* Bring it in front of other tabs */
+}
+
+/* The ACTIVE tab's button */
+.tab-wrapper.active .tab-button {
+    font-weight: 600;
     color: #3B82F6;
 }
 
-.dark .tab-button.active {
-    border-color: #60A5FA; /* Tailwind's blue-400 */
+/* Dark Mode Styles */
+.dark .tab-wrapper {
+    background-color: #1F2937;
+    border-color: #4B5563;
+}
+
+.dark .tab-wrapper:not(.active):hover {
+    background-color: #374151;
+}
+
+.dark .tab-wrapper.active {
+    background-color: #374151;
+    border-bottom: 1px solid #374151;
+}
+
+.dark .tab-wrapper.active .tab-button {
     color: #60A5FA;
 }

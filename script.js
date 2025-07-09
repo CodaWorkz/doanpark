@@ -275,26 +275,21 @@ paymentCardBtn.addEventListener('click', () => {
         departureAction(true);
     }
 });
-// --- TAB SWITCHING LOGIC ---
+// --- TAB SWITCHING LOGIC (Corrected Version) ---
 tabButtons.forEach(button => {
     button.addEventListener('click', () => {
-        // De-select all buttons
-        tabButtons.forEach(btn => {
-            btn.classList.remove('active');
-            // Re-apply default non-active styles
-            btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'dark:text-gray-400', 'dark:hover:text-gray-300', 'dark:hover:border-gray-600');
+        // First, find all tab WRAPPERS and remove the 'active' class from them
+        document.querySelectorAll('.tab-wrapper').forEach(wrapper => {
+            wrapper.classList.remove('active');
         });
 
-        // Select the clicked button
-        button.classList.add('active');
-        button.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'dark:text-gray-400', 'dark:hover:text-gray-300', 'dark:hover:border-gray-600');
+        // Now, find the parent WRAPPER of the button that was clicked and add 'active' to it
+        button.parentElement.classList.add('active');
 
-        // Hide all panels
+        // This part for showing/hiding the content panels is correct and unchanged
         tabPanels.forEach(panel => {
             panel.classList.add('hidden');
         });
-
-        // Show the correct panel
         const targetPanelId = button.dataset.tab;
         const targetPanel = document.getElementById(targetPanelId);
         if(targetPanel) {
@@ -379,7 +374,14 @@ resetListBtn.addEventListener('click', () => {
     });
 });
         
-importCsvBtn.addEventListener('click', () => csvFileInput.click());
+// This listener makes the button work again.
+// When you click the "Import" button, it programmatically clicks the hidden file input.
+importCsvBtn.addEventListener('click', () => {
+    csvFileInput.click();
+});
+
+// This listener handles the file AFTER you have selected it from the dialog window.
+// It contains the smart logic you suggested to read both Turkish and English headers.
 csvFileInput.addEventListener('change', (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -387,52 +389,67 @@ csvFileInput.addEventListener('change', (event) => {
     showConfirmationModal('confirmImport', () => {
         const reader = new FileReader();
         reader.onload = (e) => {
-            vehicleRecords = []; // Clear existing records
             const text = e.target.result;
             const rows = text.split(/\r?\n/);
-            const header = rows.shift().split(',').map(h => h.trim().replace(/"/g, ''));
             
+            const header = rows.shift().split(',').map(h => h.trim().replace(/"/g, ''));
             const headerMap = {};
             header.forEach((h, i) => { headerMap[h] = i; });
-            
+
+            const importedRecords = [];
             rows.forEach(row => {
                 if (row.trim() === '') return;
-                const columns = row.split(',');
+                
+                const columns = row.split(',').map(col => col.trim().replace(/"/g, ''));
                 try {
-                    const arrivalDate = new Date(columns[headerMap[translations.tableArrival[currentLanguage]]].replace(' ', 'T'));
+                    // Bilingual header checking
+                    const plate = columns[headerMap['Plaka']] || columns[headerMap['Plate']];
+                    const arrivalStr = columns[headerMap['Giriş Saati']] || columns[headerMap['Arrival']];
+                    const departureStr = columns[headerMap['Çıkış Saati']] || columns[headerMap['Departure']];
+                    const keyStr = columns[headerMap['Anahtar']] || columns[headerMap['Key']];
+                    const feeStr = columns[headerMap['Ücret (TL)']] || columns[headerMap['Fee']] || columns[headerMap['Fee (TL)']];
+                    const paymentStr = columns[headerMap['Ödeme Yöntemi']] || columns[headerMap['PaymentMethod']];
+                    const note = columns[headerMap['Not']] || columns[headerMap['Note']];
+                    const id = columns[headerMap['No']] || columns[headerMap['#']];
+                    
+                    if (!plate || !arrivalStr) return; // Skip rows without essential data
+
+                    const arrivalDate = new Date(arrivalStr.replace(' ', 'T'));
                     if (isNaN(arrivalDate)) return;
 
                     let departureDate = null;
-                    const departureDateRaw = columns[headerMap[translations.tableDeparture[currentLanguage]]];
-                    if (departureDateRaw) {
-                        const parsedDeparture = new Date(departureDateRaw.replace(' ', 'T'));
+                    if (departureStr) {
+                        const parsedDeparture = new Date(departureStr.replace(' ', 'T'));
                         if (!isNaN(parsedDeparture)) departureDate = parsedDeparture;
                     }
                     
                     const record = {
-                        id: Date.now().toString() + Math.random(), // Create a unique ID
-                        recordId: parseInt(columns[headerMap[translations.tableNo[currentLanguage]]]),
-                        plate: columns[headerMap[translations.tablePlate[currentLanguage]]],
-                        type: 'otomobil', // Defaulting type as it may not be in all CSVs
-                        key: columns[headerMap[translations.tableKey[currentLanguage]]] === 'Var',
+                        id: Date.now().toString() + Math.random(),
+                        recordId: parseInt(id),
+                        plate: plate,
+                        key: keyStr === 'Var' || keyStr === 'Yes',
                         arrival: arrivalDate,
                         departure: departureDate,
-                        fee: parseFloat(columns[headerMap[`${translations.tableFee[currentLanguage]} (TL)`]]) || null,
-                        paidByCreditCard: columns[headerMap[translations.paymentMethod[currentLanguage]]] === translations.creditCard[currentLanguage],
-                        note: columns[headerMap[translations.tableNote[currentLanguage]]] ? columns[headerMap[translations.tableNote[currentLanguage]]].replace(/"/g, '') : '',
-                        departed: !!departureDate
+                        fee: parseFloat(feeStr) || null,
+                        paidByCreditCard: paymentStr === translations.creditCard.tr || paymentStr === translations.creditCard.en,
+                        note: note || '',
+                        departed: !!departureDate,
+                        type: 'otomobil'
                     };
-                    vehicleRecords.push(record);
+                    importedRecords.push(record);
                 } catch(err) {
                     console.error("Error parsing row during import:", row, err);
                 }
             });
+            
+            vehicleRecords = importedRecords;
             saveRecordsToLocalStorage();
             renderTable();
             showMessage("successImport", false);
         };
         reader.readAsText(file, 'UTF-8');
     });
+    // Reset file input to allow re-uploading the same file
     csvFileInput.value = '';
 });
 
